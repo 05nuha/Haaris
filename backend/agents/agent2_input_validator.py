@@ -10,6 +10,11 @@ and prompt-leaking attempts — using Llama 3.1 8B via the Groq API
 This is a *defensive* classifier: it labels risky content that has
 already been submitted to an enterprise LLM, so security teams can
 triage it. It never executes or amplifies the analyzed content.
+
+PII contract: the orchestrator passes a PII-REDACTED copy of the pair
+(Agent 1's redact() has already replaced UAE identifiers with typed
+placeholders like [EMIRATES_ID_REDACTED]). Raw user text must never be
+passed to this agent — it goes to the Groq cloud API verbatim.
 """
 
 from __future__ import annotations
