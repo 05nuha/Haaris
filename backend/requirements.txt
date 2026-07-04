@@ -1,0 +1,24 @@
+# Haaris (حارس) — UAE LLM Compliance Guardrail — Backend dependencies
+# Agent 1: local regex. Agents 2-4: Groq API (free tier, fast).
+
+# API framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+
+# Data validation
+pydantic>=2.9.0
+pydantic-settings>=2.6.0
+
+# LLM client — Agents 2-4 use the Groq API (free tier).
+# Agent 1 is pure regex — no LLM dependency at all.
+groq>=0.13.0
+
+# Database (async MongoDB)
+motor>=3.6.0
+
+# PDF generation
+reportlab>=4.2.0
+
+# Utilities
+python-dotenv>=1.0.1
+httpx>=0.27.0
