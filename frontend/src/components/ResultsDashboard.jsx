@@ -1,9 +1,122 @@
+import { useEffect, useState } from 'react'
 import AgentCard from './AgentCard.jsx'
 import FrameworkMap from './FrameworkMap.jsx'
+import PipelineFlow from './PipelineFlow.jsx'
 import { downloadReport } from '../api.js'
-import { useState } from 'react'
 
-/** Full results view: decision badge, 2×2 agent grid, framework map, report. */
+// ---------------------------------------------------------------------------
+// Confidence gauge — SVG semicircle arc, animates from 0 on mount
+// ---------------------------------------------------------------------------
+
+function ConfidenceGauge({ confidence }) {
+  const [pct, setPct] = useState(0)
+
+  useEffect(() => {
+    const t = setTimeout(() => setPct(Math.min(Math.max(confidence, 0), 1)), 80)
+    return () => clearTimeout(t)
+  }, [confidence])
+
+  const HALF_CIRC = Math.PI * 44
+  const offset = HALF_CIRC * (1 - pct)
+  const color = pct < 0.4 ? 'var(--c4)' : pct < 0.75 ? 'var(--c3)' : 'var(--c5)'
+  const label = pct < 0.4 ? 'Low' : pct < 0.75 ? 'Suspicious' : 'Confirmed'
+
+  return (
+    <div className="conf-gauge">
+      <svg
+        width="120"
+        height="70"
+        viewBox="0 0 120 70"
+        aria-label={`Injection confidence: ${Math.round(pct * 100)}%`}
+      >
+        <path
+          d="M16 60 A44 44 0 0 1 104 60"
+          fill="none"
+          stroke="rgba(255,255,255,0.07)"
+          strokeWidth="8"
+          strokeLinecap="round"
+        />
+        <path
+          d="M16 60 A44 44 0 0 1 104 60"
+          fill="none"
+          stroke={color}
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={HALF_CIRC}
+          strokeDashoffset={offset}
+          style={{
+            transition: 'stroke-dashoffset 0.9s cubic-bezier(0.25,0.8,0.3,1), stroke 0.4s ease',
+          }}
+        />
+        <text
+          x="60"
+          y="54"
+          textAnchor="middle"
+          fill="var(--text)"
+          fontSize="17"
+          fontWeight="800"
+          fontFamily="Inter, -apple-system, sans-serif"
+        >
+          {Math.round(pct * 100)}%
+        </text>
+      </svg>
+      <div className="conf-label">
+        <span style={{ color }}>{label}</span>{' '}· injection confidence
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// PII breakdown — horizontal bars per PII type, colored by severity
+// ---------------------------------------------------------------------------
+
+const SEV_BAR_COLOR = {
+  Critical: 'var(--c5)',
+  High:     'var(--c8)',
+  Medium:   'var(--c3)',
+  Low:      'var(--c6)',
+  None:     'var(--c4)',
+}
+
+function PIIBreakdown({ findings }) {
+  if (!findings || findings.length === 0) return null
+
+  const groups = {}
+  for (const f of findings) {
+    if (!groups[f.pii_type]) groups[f.pii_type] = { count: 0, severity: f.severity }
+    groups[f.pii_type].count++
+  }
+
+  const entries = Object.entries(groups).sort((a, b) => b[1].count - a[1].count)
+  const maxCount = Math.max(...entries.map(([, v]) => v.count))
+
+  return (
+    <div className="pii-breakdown">
+      <span className="eyebrow">PII breakdown</span>
+      {entries.map(([type, { count, severity }], idx) => (
+        <div key={type} className="pii-bar-row" style={{ '--bar-idx': idx }}>
+          <div className="pii-bar-label">{type}</div>
+          <div className="pii-bar-track">
+            <div
+              className="pii-bar-fill"
+              style={{
+                '--bar-w': `${(count / maxCount) * 100}%`,
+                background: SEV_BAR_COLOR[severity] || 'var(--c1)',
+              }}
+            />
+          </div>
+          <div className="pii-bar-count">{count}×</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Main dashboard
+// ---------------------------------------------------------------------------
+
 export default function ResultsDashboard({ result }) {
   const { decision, decision_rationale, agents } = result
   const { pii, injection, framework, report } = agents
@@ -27,11 +140,17 @@ export default function ResultsDashboard({ result }) {
       return `Groq · ${name}`
     }
     if (m.startsWith('ollama/')) return `Ollama · ${m.replace('ollama/', '')}`
-    return m // e.g. Agent 1: "regex (deterministic)"
+    return m
   }
+
+  const ddAssessment = report.digital_dubai_assessment
 
   return (
     <div className="results">
+
+      {/* Pipeline flow — four nodes showing each agent's outcome severity */}
+      <PipelineFlow agents={agents} />
+
       {/* Decision badge with pulsing glow */}
       <div className={`decision-wrap decision-${decision}`}>
         <div className="decision-glow" aria-hidden="true" />
@@ -52,8 +171,11 @@ export default function ResultsDashboard({ result }) {
             (f) => `${f.pii_type} in ${f.location} — ${f.matched_text} (${f.severity})`,
           )}
         >
+          <PIIBreakdown findings={pii.findings} />
           {pii.summary && pii.findings.length > 0 && (
-            <p style={{ color: 'var(--muted)', fontSize: '0.8rem', marginTop: 10 }}>{pii.summary}</p>
+            <p style={{ color: 'var(--muted)', fontSize: '0.8rem', marginTop: 10 }}>
+              {pii.summary}
+            </p>
           )}
         </AgentCard>
 
@@ -68,13 +190,18 @@ export default function ResultsDashboard({ result }) {
             injection.injection_detected
               ? [
                   `${injection.injection_type} — confidence ${(injection.confidence * 100).toFixed(0)}%`,
-                  ...(injection.extracted_payload ? [`Payload: “${injection.extracted_payload}”`] : []),
+                  ...(injection.extracted_payload
+                    ? [`Payload: "${injection.extracted_payload}"`]
+                    : []),
                 ]
               : []
           }
         >
+          <ConfidenceGauge confidence={injection.confidence ?? 0} />
           {injection.rationale && (
-            <p style={{ color: 'var(--muted)', fontSize: '0.8rem', marginTop: 10 }}>{injection.rationale}</p>
+            <p style={{ color: 'var(--muted)', fontSize: '0.8rem', marginTop: 10 }}>
+              {injection.rationale}
+            </p>
           )}
         </AgentCard>
 
@@ -102,6 +229,31 @@ export default function ResultsDashboard({ result }) {
       {/* Framework mapping detail */}
       <FrameworkMap framework={framework} />
 
+      {/* Digital Dubai AI Ethics — 2×2 assessment grid */}
+      {ddAssessment && (
+        <section>
+          <h2 className="section-title">Digital Dubai AI Ethics</h2>
+          <div className="dd-grid">
+            {[
+              { key: 'accountability', label: 'Accountability', icon: '⊛' },
+              { key: 'transparency',   label: 'Transparency',   icon: '◈' },
+              { key: 'fairness',       label: 'Fairness',       icon: '⊜' },
+              { key: 'explainability', label: 'Explainability', icon: '◎' },
+            ].map(({ key, label, icon }) => (
+              <div key={key} className="dd-card glass fade-up">
+                <div className="dd-card-head">
+                  <span className="dd-icon" aria-hidden="true">{icon}</span>
+                  <span className="eyebrow">{label}</span>
+                </div>
+                <p className="dd-text">
+                  {ddAssessment[key] || 'No assessment provided.'}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Compliance report */}
       <section>
         <h2 className="section-title">Compliance Report</h2>
@@ -127,7 +279,9 @@ export default function ResultsDashboard({ result }) {
               <span aria-hidden="true">⬇</span> Download PDF report
             </button>
           )}
-          {downloadError && <div className="agent-error" style={{ marginTop: 12 }}>{downloadError}</div>}
+          {downloadError && (
+            <div className="agent-error" style={{ marginTop: 12 }}>{downloadError}</div>
+          )}
         </div>
       </section>
     </div>

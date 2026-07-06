@@ -20,6 +20,7 @@
   --c5: #e88a8a; /* soft red — NON-COMPLIANT */
   --c6: #82b8f0; /* soft blue */
   --c7: #d47ee8; /* soft fuchsia */
+  --c8: #f0a56a; /* soft orange — High severity */
 
   --radius: 12px;
   --maxw: 1200px;
@@ -945,4 +946,197 @@ h1, h2, h3 {
 :focus-visible {
   outline: 2px solid var(--c1);
   outline-offset: 2px;
+}
+
+/* ============================================================
+   Pipeline flow
+   ============================================================ */
+
+.pipeline-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 0 32px;
+  animation: fade-up 0.5s cubic-bezier(0.2, 0.8, 0.25, 1) both 0.05s;
+}
+
+.pipeline-stage-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.pipeline-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--node-color, var(--stroke));
+  background: var(--panel);
+  min-width: 90px;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pipeline-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.pipeline-node-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.pipeline-node-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.pipeline-node-sev {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pipeline-connector {
+  flex: none;
+  margin: 0 2px;
+  opacity: 0.5;
+  padding-bottom: 18px; /* align with node center */
+}
+
+/* ============================================================
+   Confidence gauge (Agent 2 card)
+   ============================================================ */
+
+.conf-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.conf-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+/* ============================================================
+   PII breakdown bars (Agent 1 card)
+   ============================================================ */
+
+.pii-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.pii-breakdown .eyebrow {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.pii-bar-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 28px;
+  align-items: center;
+  gap: 10px;
+  animation: fade-up 0.45s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+  animation-delay: calc(var(--bar-idx, 0) * 60ms + 0.1s);
+}
+
+.pii-bar-label {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pii-bar-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.pii-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  width: var(--bar-w, 0%);
+  animation: bar-grow 0.7s cubic-bezier(0.25, 0.8, 0.3, 1) both;
+  animation-delay: calc(var(--bar-idx, 0) * 60ms + 0.15s);
+  opacity: 0.9;
+}
+
+@keyframes bar-grow {
+  from { width: 0; }
+  to   { width: var(--bar-w); }
+}
+
+.pii-bar-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* ============================================================
+   Digital Dubai AI Ethics 2×2 grid
+   ============================================================ */
+
+.dd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.dd-card {
+  padding: 18px 20px;
+  animation: fade-up 0.5s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+}
+.dd-card:nth-child(1) { animation-delay: 0.05s; }
+.dd-card:nth-child(2) { animation-delay: 0.12s; }
+.dd-card:nth-child(3) { animation-delay: 0.19s; }
+.dd-card:nth-child(4) { animation-delay: 0.26s; }
+
+.dd-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.dd-icon {
+  font-size: 1rem;
+  color: var(--c4);
+  flex: none;
+}
+
+.dd-text {
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 820px) {
+  .pipeline-flow { gap: 6px; }
+  .pipeline-node { min-width: 72px; padding: 10px 12px; }
+  .pipeline-node-label { font-size: 0.62rem; }
+  .pii-bar-row { grid-template-columns: 110px 1fr 24px; }
+  .dd-grid { grid-template-columns: 1fr; }
 }
