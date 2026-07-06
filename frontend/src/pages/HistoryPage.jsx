@@ -1,9 +1,25 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { fetchHistory, fetchAnalysis } from '../api.js'
+
+const FILTERS = ['ALL', 'COMPLIANT', 'REVIEW', 'NON-COMPLIANT']
+
+// Short labels for the expanded-row injection type.
+const SHORT_INJECTION = {
+  'Direct Prompt Injection': 'Direct',
+  'Indirect Prompt Injection': 'Indirect',
+  'Jailbreak Attempt': 'Jailbreak',
+  'Goal Hijacking': 'Goal Hijacking',
+  'Prompt Leaking': 'Prompt Leak',
+  'None Detected': '—',
+}
 
 export default function HistoryPage({ onView }) {
   const [state, setState] = useState({ loading: true, error: null, items: [], total: 0 })
   const [viewError, setViewError] = useState(null)
+  const [filter, setFilter] = useState('ALL')
+  const [expandedId, setExpandedId] = useState(null)
+  // analysis_id → full AnalysisResult (lazy-loaded when a row expands)
+  const [details, setDetails] = useState({})
 
   useEffect(() => {
     let live = true
@@ -27,10 +43,26 @@ export default function HistoryPage({ onView }) {
   const view = async (analysisId) => {
     setViewError(null)
     try {
-      const full = await fetchAnalysis(analysisId)
+      const full = details[analysisId] ?? (await fetchAnalysis(analysisId))
       onView(full)
     } catch {
       setViewError('Could not load that analysis — it may predate the audit trail or MongoDB is unavailable.')
+    }
+  }
+
+  const toggleExpand = async (analysisId) => {
+    if (expandedId === analysisId) {
+      setExpandedId(null)
+      return
+    }
+    setExpandedId(analysisId)
+    if (!details[analysisId]) {
+      try {
+        const full = await fetchAnalysis(analysisId)
+        setDetails((d) => ({ ...d, [analysisId]: full }))
+      } catch {
+        setDetails((d) => ({ ...d, [analysisId]: { _error: true } }))
+      }
     }
   }
 
@@ -46,7 +78,7 @@ export default function HistoryPage({ onView }) {
 
   if (state.error) {
     return (
-      <div className="state-panel glass error">
+      <div className="state-panel glass error" role="alert">
         <div className="state-icon" aria-hidden="true">⚠</div>
         <div className="state-title">Audit trail unavailable</div>
         <p className="state-body">{state.error}</p>
@@ -67,15 +99,33 @@ export default function HistoryPage({ onView }) {
     )
   }
 
+  const visible =
+    filter === 'ALL' ? state.items : state.items.filter((i) => i.decision === filter)
+
   return (
     <section className="fade-up">
       <h2 className="section-title">Audit Trail — {state.total} analyses</h2>
-      {viewError && <div className="agent-error" style={{ marginBottom: 14 }}>{viewError}</div>}
+
+      <div className="filter-chips" role="group" aria-label="Filter by decision">
+        {FILTERS.map((f) => (
+          <button
+            key={f}
+            className={`filter-chip ${f !== 'ALL' ? `filter-${f}` : ''} ${filter === f ? 'active' : ''}`}
+            onClick={() => setFilter(f)}
+            aria-pressed={filter === f}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {viewError && <div className="agent-error" role="alert" style={{ marginBottom: 14 }}>{viewError}</div>}
+
       <div className="history-table-wrap glass">
         <table className="history-table">
           <thead>
             <tr>
-              <th>Timestamp (UTC)</th>
+              <th>Timestamp</th>
               <th>Decision</th>
               <th>PII</th>
               <th>Injection</th>
@@ -85,24 +135,87 @@ export default function HistoryPage({ onView }) {
             </tr>
           </thead>
           <tbody>
-            {state.items.map((item) => (
-              <tr key={item.analysis_id}>
-                <td>{new Date(item.created_at).toLocaleString('en-GB', { timeZone: 'UTC' })}</td>
-                <td><span className={`decision-chip chip-${item.decision}`}>{item.decision}</span></td>
-                <td>{item.pii_findings_count > 0 ? `${item.pii_findings_count} finding${item.pii_findings_count > 1 ? 's' : ''}` : '—'}</td>
-                <td>{item.injection_detected ? 'Detected' : '—'}</td>
-                <td><span className={`severity-badge sev-${item.highest_severity}`}>{item.highest_severity}</span></td>
-                <td className="hash-mono" title={item.input_hash}>{item.input_hash.slice(0, 12)}…</td>
-                <td>
-                  <button className="reviewbtn" onClick={() => view(item.analysis_id)}>
-                    Re-view
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {visible.map((item) => {
+              const expanded = expandedId === item.analysis_id
+              const detail = details[item.analysis_id]
+              return (
+                <Fragment key={item.analysis_id}>
+                  <tr
+                    className={`history-row ${expanded ? 'expanded' : ''}`}
+                    onClick={() => toggleExpand(item.analysis_id)}
+                    aria-expanded={expanded}
+                  >
+                    <td>
+                      {new Date(item.created_at).toLocaleString(undefined, {
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                      })}
+                    </td>
+                    <td><span className={`decision-chip chip-${item.decision}`}>{item.decision}</span></td>
+                    <td>{item.pii_findings_count > 0 ? `${item.pii_findings_count} finding${item.pii_findings_count > 1 ? 's' : ''}` : '—'}</td>
+                    <td>{item.injection_detected ? 'Detected' : '—'}</td>
+                    <td><span className={`severity-badge sev-${item.highest_severity}`}>{item.highest_severity}</span></td>
+                    <td className="hash-mono" title={item.input_hash}>{item.input_hash.slice(0, 12)}…</td>
+                    <td>
+                      <button
+                        className="reviewbtn"
+                        onClick={(e) => { e.stopPropagation(); view(item.analysis_id) }}
+                      >
+                        Re-view
+                      </button>
+                    </td>
+                  </tr>
+                  {expanded && (
+                    <tr className="history-detail-row">
+                      <td colSpan={7}>
+                        {!detail ? (
+                          <div className="history-detail loading">
+                            <span className="spinner" aria-hidden="true" /> Loading details…
+                          </div>
+                        ) : detail._error ? (
+                          <div className="history-detail">
+                            Could not load details for this analysis.
+                          </div>
+                        ) : (
+                          <div className="history-detail">
+                            <p className="history-detail-rationale">
+                              {detail.decision_rationale || 'No rationale recorded.'}
+                            </p>
+                            <div className="history-detail-facts">
+                              <span>
+                                <strong>PII:</strong>{' '}
+                                {detail.agents.pii.findings.length > 0
+                                  ? detail.agents.pii.summary
+                                  : 'none detected'}
+                              </span>
+                              <span>
+                                <strong>Injection:</strong>{' '}
+                                {detail.agents.injection.injection_detected
+                                  ? `${SHORT_INJECTION[detail.agents.injection.injection_type] ?? detail.agents.injection.injection_type} (${Math.round(detail.agents.injection.confidence * 100)}%)`
+                                  : 'none detected'}
+                              </span>
+                              <span>
+                                <strong>Framework mappings:</strong>{' '}
+                                {detail.agents.framework.mappings.length || 'none'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              )
+            })}
           </tbody>
         </table>
       </div>
+
+      {state.total > state.items.length && (
+        <p className="history-pagination-note">
+          Showing {state.items.length} of {state.total}
+        </p>
+      )}
     </section>
   )
 }

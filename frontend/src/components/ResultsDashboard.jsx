@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import AgentCard from './AgentCard.jsx'
 import FrameworkMap from './FrameworkMap.jsx'
 import PipelineFlow from './PipelineFlow.jsx'
@@ -71,7 +71,7 @@ function ConfidenceGauge({ confidence }) {
 // PII breakdown — horizontal bars per PII type, colored by severity
 // ---------------------------------------------------------------------------
 
-const SEV_BAR_COLOR = {
+const SEV_COLOR = {
   Critical: 'var(--c5)',
   High:     'var(--c8)',
   Medium:   'var(--c3)',
@@ -102,7 +102,7 @@ function PIIBreakdown({ findings }) {
               className="pii-bar-fill"
               style={{
                 '--bar-w': `${(count / maxCount) * 100}%`,
-                background: SEV_BAR_COLOR[severity] || 'var(--c1)',
+                background: SEV_COLOR[severity] || 'var(--c1)',
               }}
             />
           </div>
@@ -114,11 +114,93 @@ function PIIBreakdown({ findings }) {
 }
 
 // ---------------------------------------------------------------------------
+// Risk summary strip — report.severity_ranking rendered as ranked chips
+// ---------------------------------------------------------------------------
+
+function RiskSummary({ ranking }) {
+  if (!ranking || ranking.length === 0) return null
+
+  // Entries look like "Critical: PDPL Article 5 violation" — the leading
+  // word decides the chip color.
+  const levelOf = (entry) => {
+    const head = entry.split(':')[0].trim()
+    return ['Critical', 'High', 'Medium', 'Low'].includes(head) ? head : null
+  }
+
+  return (
+    <div className="risk-summary fade-up">
+      <span className="eyebrow">Risk summary</span>
+      <div className="risk-chips">
+        {ranking.map((entry, i) => {
+          const level = levelOf(entry)
+          return (
+            <span
+              key={i}
+              className={`risk-chip ${level ? `risk-${level}` : ''}`}
+              style={{ '--i': i }}
+            >
+              {entry}
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Analysis ID strip with copy-to-clipboard
+// ---------------------------------------------------------------------------
+
+function AnalysisIdStrip({ analysisId }) {
+  const [copied, setCopied] = useState(false)
+  const timer = useRef(null)
+
+  if (!analysisId) return null
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(analysisId)
+      setCopied(true)
+      clearTimeout(timer.current)
+      timer.current = setTimeout(() => setCopied(false), 1500)
+    } catch {
+      /* clipboard unavailable — leave the ID selectable */
+    }
+  }
+
+  return (
+    <div className="analysis-id-strip">
+      <span className="hash-mono">Analysis ID: {analysisId}</span>
+      <button
+        className="copy-btn"
+        onClick={copy}
+        aria-label={copied ? 'Copied' : 'Copy analysis ID'}
+      >
+        {copied ? (
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <path d="M3 8.5l3.5 3.5 6.5-8" fill="none" stroke="var(--c4)"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <rect x="5" y="5" width="9" height="9" rx="1.5" fill="none"
+              stroke="currentColor" strokeWidth="1.4" />
+            <path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"
+              fill="none" stroke="currentColor" strokeWidth="1.4" />
+          </svg>
+        )}
+      </button>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Main dashboard
 // ---------------------------------------------------------------------------
 
-export default function ResultsDashboard({ result }) {
-  const { decision, decision_rationale, agents } = result
+export default function ResultsDashboard({ result, onNewAnalysis }) {
+  const { analysis_id, decision, decision_rationale, agents } = result
   const { pii, injection, framework, report } = agents
   const [downloadError, setDownloadError] = useState(null)
 
@@ -148,6 +230,14 @@ export default function ResultsDashboard({ result }) {
   return (
     <div className="results">
 
+      {onNewAnalysis && (
+        <div className="results-toolbar">
+          <button className="new-analysis-btn" onClick={onNewAnalysis}>
+            ← Analyze new pair
+          </button>
+        </div>
+      )}
+
       {/* Pipeline flow — four nodes showing each agent's outcome severity */}
       <PipelineFlow agents={agents} />
 
@@ -158,6 +248,9 @@ export default function ResultsDashboard({ result }) {
         {decision_rationale && <p className="decision-rationale">{decision_rationale}</p>}
       </div>
 
+      {/* Risk summary — pre-ranked findings from Agent 4 */}
+      <RiskSummary ranking={report.severity_ranking} />
+
       {/* 2×2 agent grid with staggered entrance */}
       <div className="agent-grid">
         <AgentCard
@@ -167,9 +260,10 @@ export default function ResultsDashboard({ result }) {
           color="var(--c4)"
           severity={pii.highest_severity}
           error={pii.error}
-          findings={pii.findings.map(
-            (f) => `${f.pii_type} in ${f.location} — ${f.matched_text} (${f.severity})`,
-          )}
+          findings={pii.findings.map((f) => ({
+            text: `${f.pii_type} in ${f.location} — ${f.matched_text} (${f.severity})`,
+            masked: true,
+          }))}
         >
           <PIIBreakdown findings={pii.findings} />
           {pii.summary && pii.findings.length > 0 && (
@@ -280,10 +374,12 @@ export default function ResultsDashboard({ result }) {
             </button>
           )}
           {downloadError && (
-            <div className="agent-error" style={{ marginTop: 12 }}>{downloadError}</div>
+            <div className="agent-error" role="alert" style={{ marginTop: 12 }}>{downloadError}</div>
           )}
         </div>
       </section>
+
+      <AnalysisIdStrip analysisId={analysis_id} />
     </div>
   )
 }
