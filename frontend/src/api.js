@@ -1,8 +1,11 @@
-// Haaris API client — talks to the FastAPI backend on localhost:8000.
+// Haaris API client — talks to the FastAPI backend.
+// In production, set VITE_API_URL (e.g. https://haaris-backend.onrender.com).
 import axios from 'axios'
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 export const api = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: BASE_URL,
   timeout: 300000, // local models can be slow on first load
 })
 
@@ -16,7 +19,7 @@ export const fetchAnalysis = (analysisId) =>
   api.get(`/api/analysis/${analysisId}`).then((r) => r.data)
 
 export const reportUrl = (reportId) =>
-  `http://localhost:8000/api/report/${reportId}`
+  `${BASE_URL}/api/report/${reportId}`
 
 export const downloadReport = async (reportId) => {
   const res = await api.get(`/api/report/${reportId}`, { responseType: 'blob' })

@@ -15,6 +15,12 @@ Detects:
 - UAE phone numbers    +971 5X XXX XXXX (and 00971 / 05X local variants)
 - UAE passport numbers letter + 7-8 digits
 - Trade license numbers CN/DED/TL prefixed, or "trade license no. NNNN"
+- Email addresses      standard local@domain.tld form
+- UAE IBAN             AE + 21 digits (space/dash tolerant)
+
+Also exposes redact(), which replaces every match with a typed placeholder
+(e.g. [EMIRATES_ID_REDACTED]) so the orchestrator can strip PII from the
+prompt/response before any text is sent to a cloud LLM.
 """
 
 from __future__ import annotations
@@ -46,6 +52,22 @@ _PATTERNS: list[tuple[PIIType, re.Pattern[str], Severity]] = [
         PIIType.EMIRATES_ID,
         re.compile(r"\b784[-\s]?\d{4}[-\s]?\d{7}[-\s]?\d\b"),
         Severity.CRITICAL,
+    ),
+    # UAE IBAN: AE + 2 check digits + 19-digit BBAN (space/dash tolerant).
+    # Listed before the passport pattern so redaction consumes the full IBAN
+    # rather than leaving fragments a later pattern could half-match.
+    (
+        PIIType.IBAN,
+        re.compile(r"\bAE\d{2}(?:[\s-]?\d{4}){4}[\s-]?\d{3}\b"),
+        Severity.CRITICAL,
+    ),
+    # Email addresses (standard local@domain.tld). Listed before the phone and
+    # passport patterns so redaction removes the whole address, not a digit
+    # run inside it.
+    (
+        PIIType.EMAIL,
+        re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
+        Severity.MEDIUM,
     ),
     # UAE mobile numbers: +971 5X XXX XXXX, 00971 5X..., and local 05X variants
     (
@@ -80,6 +102,32 @@ def _mask(text: str) -> str:
         return "*" * len(text)
     visible = max(2, len(text) // 5)
     return text[:visible] + "*" * (len(text) - 2 * visible) + text[-visible:]
+
+
+# Typed placeholders used by redact(). Every PIIType with a pattern above
+# must have an entry here.
+_REDACTION_PLACEHOLDERS: dict[PIIType, str] = {
+    PIIType.EMIRATES_ID: "[EMIRATES_ID_REDACTED]",
+    PIIType.IBAN: "[IBAN_REDACTED]",
+    PIIType.EMAIL: "[EMAIL_REDACTED]",
+    PIIType.UAE_PHONE: "[UAE_PHONE_REDACTED]",
+    PIIType.UAE_PASSPORT: "[PASSPORT_LIKE_ID_REDACTED]",
+    PIIType.TRADE_LICENSE: "[TRADE_LICENSE_REDACTED]",
+}
+
+
+def redact(text: str) -> str:
+    """Replace every detected PII match with a typed placeholder.
+
+    Deterministic and self-contained: it re-runs the same _PATTERNS used for
+    detection, so it needs no upstream agent state and cannot fail open if
+    Agent 1's scan errored. Patterns are applied in _PATTERNS order — broader
+    identifiers (IBAN, email) are listed before the narrower digit-run
+    patterns that could otherwise match fragments inside them.
+    """
+    for pii_type, pattern, _severity in _PATTERNS:
+        text = pattern.sub(_REDACTION_PLACEHOLDERS[pii_type], text)
+    return text
 
 
 def _regex_scan(text: str, location: str) -> list[PIIFinding]:

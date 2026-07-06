@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react'
 
-const STAGES = [
-  { at: 0, pct: 20, label: 'Agents 1 & 2 scanning in parallel — local PII regex + injection classification…' },
-  { at: 2, pct: 55, label: 'Agent 3 mapping findings to PDPL, OWASP, MITRE ATLAS…' },
-  { at: 4, pct: 80, label: 'Agent 4 drafting the compliance report…' },
-  { at: 7, pct: 92, label: 'Finalizing PDF and audit record…' },
+// Sequential pipeline stages (Agent 1 runs first and redacts PII before
+// anything is sent to the cloud — the labels reflect the real order).
+const STEPS = [
+  { at: 0, pct: 25, icon: '🛡', label: 'Agent 1 — Scanning for UAE-regulated PII…' },
+  { at: 2, pct: 55, icon: '⚔', label: 'Agent 2 — Classifying prompt injection patterns…' },
+  { at: 4, pct: 80, icon: '🗺', label: 'Agent 3 — Mapping to PDPL, OWASP, MITRE ATLAS…' },
+  { at: 7, pct: 93, icon: '📋', label: 'Agent 4 — Drafting compliance report…' },
 ]
 
-/** Loading state: staged progress bar + shimmering skeleton agent cards. */
+const StepCheck = () => (
+  <svg className="step-check" viewBox="0 0 20 20" aria-hidden="true">
+    <path d="M5 10.5l3.5 3.5 6.5-8" fill="none" stroke="var(--c4)" strokeWidth="2.2"
+      strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
+/** Loading state: progress bar + per-step pipeline status list. */
 export default function SkeletonLoader() {
   const [elapsed, setElapsed] = useState(0)
 
@@ -16,23 +25,30 @@ export default function SkeletonLoader() {
     return () => clearInterval(t)
   }, [])
 
-  const stage = [...STAGES].reverse().find((s) => elapsed >= s.at) ?? STAGES[0]
+  const activeIdx = STEPS.reduce((acc, s, i) => (elapsed >= s.at ? i : acc), 0)
+  const pct = STEPS[activeIdx].pct
 
   return (
     <div className="loading-panel glass fade-up" role="status" aria-live="polite">
-      <div className="loading-stage">
-        <span className="spinner" aria-hidden="true" />
-        {stage.label}
-      </div>
       <div className="progress-track">
-        <div className="progress-fill" style={{ width: `${stage.pct}%` }} />
+        <div className="progress-fill" style={{ width: `${pct}%` }} />
       </div>
-      <div className="skeleton-grid" aria-hidden="true">
-        <div className="skeleton-card" />
-        <div className="skeleton-card" style={{ animationDelay: '0.15s' }} />
-        <div className="skeleton-card" style={{ animationDelay: '0.3s' }} />
-        <div className="skeleton-card" style={{ animationDelay: '0.45s' }} />
-      </div>
+
+      <ol className="pipeline-steps">
+        {STEPS.map((step, i) => {
+          const state = i < activeIdx ? 'done' : i === activeIdx ? 'active' : 'pending'
+          return (
+            <li key={i} className={`pipeline-step step-${state}`}>
+              <span className="step-icon" aria-hidden="true">{step.icon}</span>
+              <span className="step-label">{step.label}</span>
+              <span className="step-status">
+                {state === 'done' && <StepCheck />}
+                {state === 'active' && <span className="spinner" aria-hidden="true" />}
+              </span>
+            </li>
+          )
+        })}
+      </ol>
     </div>
   )
 }

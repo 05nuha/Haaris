@@ -1,5 +1,11 @@
 /** One agent result card — accent bar, model pill, animated checkmark,
-    findings list, and severity badge. */
+    findings list (with optional masked-value tooltips), and severity badge.
+
+    `findings` items may be plain strings, or objects:
+      { text: '…', masked: true }  → renders an ⓘ tooltip explaining masking. */
+
+const MASK_NOTE =
+  'Value masked — raw identifiers are never stored or sent to cloud APIs.'
 
 const SeverityBadge = ({ level }) =>
   level ? <span className={`severity-badge sev-${level}`}>{level}</span> : null
@@ -37,16 +43,35 @@ export default function AgentCard({ icon, name, model, color, severity, findings
 
       {findings && findings.length > 0 ? (
         <ul className="findings-list">
-          {findings.map((f, i) => (
-            <li key={i}>{f}</li>
-          ))}
+          {findings.map((f, i) => {
+            const text = typeof f === 'string' ? f : f.text
+            const masked = typeof f === 'object' && f.masked
+            return (
+              <li key={i} style={{ '--i': i }}>
+                <span>
+                  {text}
+                  {masked && (
+                    <span
+                      className="mask-info"
+                      tabIndex={0}
+                      role="note"
+                      aria-label={MASK_NOTE}
+                      data-tip={MASK_NOTE}
+                    >
+                      ⓘ
+                    </span>
+                  )}
+                </span>
+              </li>
+            )
+          })}
         </ul>
       ) : !error ? (
         <p className="findings-empty">No findings — clean.</p>
       ) : null}
 
       {children}
-      {error && <div className="agent-error">Agent error: {error}</div>}
+      {error && <div className="agent-error" role="alert">Agent error: {error}</div>}
     </article>
   )
 }

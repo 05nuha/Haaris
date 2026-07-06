@@ -3,9 +3,11 @@ Haaris (حارس) — Orchestrator
 
 Coordinates the four-agent pipeline:
 
-    Agent 1 (PII, local regex)   ─┐
-                                  ├─ run in parallel (asyncio.gather)
-    Agent 2 (Validator, Groq)    ─┘
+    Agent 1 (PII, local regex) — runs first, entirely in-process
+                 ↓
+    redact() strips detected PII from the prompt/response
+                 ↓
+    Agent 2 (Validator, Groq) — sees only the redacted text
                  ↓
     Agent 3 (Framework Mapper, Groq)
                  ↓
@@ -13,18 +15,21 @@ Coordinates the four-agent pipeline:
                  ↓
     Final decision: COMPLIANT / REVIEW / NON-COMPLIANT
 
+Raw prompt/response text never leaves the process: Agent 1 and redact()
+are deterministic local regex, and every downstream cloud call receives
+only redacted text or structured findings with masked matches.
+
 The orchestrator also computes the audit-trail input hash and persists
 the full result to MongoDB.
 """
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import logging
 import uuid
 
-from backend.agents.agent1_pii_detector import detect_pii
+from backend.agents.agent1_pii_detector import detect_pii, redact
 from backend.agents.agent2_input_validator import validate_input
 from backend.agents.agent3_framework_mapper import map_frameworks
 from backend.agents.agent4_report_generator import generate_report
@@ -140,39 +145,58 @@ async def run_analysis(analysis_input: AnalysisInput) -> AnalysisResult:
     logger.info("Starting analysis %s", analysis_id)
 
     # ------------------------------------------------------------------
-    # Stage 1: Agents 1 and 2 in parallel (they are independent).
-    # return_exceptions guards against one task poisoning the other.
+    # Stage 1: Agent 1 (local regex) runs first — it is effectively
+    # instant, and running it before Agent 2 means the text can be
+    # redacted before anything crosses the network boundary.
     # ------------------------------------------------------------------
-    pii_task = detect_pii(analysis_input)
-    injection_task = validate_input(analysis_input)
-    pii_result, injection_result = await asyncio.gather(
-        pii_task, injection_task, return_exceptions=True
-    )
-
-    if isinstance(pii_result, BaseException):
-        logger.error("Agent 1 raised: %s", pii_result)
+    try:
+        pii_result = await detect_pii(analysis_input)
+    except BaseException as exc:
+        logger.error("Agent 1 raised: %s", exc)
         pii_result = PIIResults(
             model="regex (deterministic)",
             status=AgentStatus.ERROR,
             summary="Agent 1 crashed before returning results.",
-            error=str(pii_result),
+            error=str(exc),
         )
-    if isinstance(injection_result, BaseException):
-        logger.error("Agent 2 raised: %s", injection_result)
+
+    # redact() re-runs the detection patterns itself, so the cloud call is
+    # protected even if Agent 1 errored above.
+    redacted_input = AnalysisInput(
+        prompt=redact(analysis_input.prompt),
+        response=redact(analysis_input.response),
+    )
+
+    # ------------------------------------------------------------------
+    # Stage 2: Agent 2 classifies the redacted pair via Groq. Raw text
+    # must never be passed here.
+    # ------------------------------------------------------------------
+    try:
+        injection_result = await validate_input(redacted_input)
+    except BaseException as exc:
+        logger.error("Agent 2 raised: %s", exc)
         injection_result = InjectionResults(
             model="groq/unavailable",
             status=AgentStatus.ERROR,
             rationale="Agent 2 crashed before returning results.",
-            error=str(injection_result),
+            error=str(exc),
         )
 
+    # Agent 2 only saw redacted text, but its free-text fields flow into
+    # Agents 3/4, MongoDB, the PDF, and the frontend — scrub them too in
+    # case the model echoed something the placeholders reveal patterns in.
+    if injection_result.extracted_payload:
+        injection_result.extracted_payload = redact(injection_result.extracted_payload)
+    if injection_result.rationale:
+        injection_result.rationale = redact(injection_result.rationale)
+
     # ------------------------------------------------------------------
-    # Stage 2: Agent 3 maps the combined findings to frameworks.
+    # Stage 3: Agent 3 maps the combined findings to frameworks.
     # ------------------------------------------------------------------
     framework_result = await map_frameworks(pii_result, injection_result)
 
     # ------------------------------------------------------------------
-    # Stage 3: Decision, then Agent 4 generates the report.
+    # Stage 4: Decision, then Agent 4 generates the report.
     # ------------------------------------------------------------------
     decision, rationale = _decide(
         pii_result, injection_result, framework_result.pdpl_violation

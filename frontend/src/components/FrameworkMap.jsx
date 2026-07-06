@@ -1,9 +1,9 @@
 /** Framework mapping section — colored framework pills + mapping cards. */
 
 const FRAMEWORK_STYLE = [
-  { match: 'PDPL', color: 'var(--c2)', icon: '⚖' },
-  { match: 'OWASP', color: 'var(--c3)', icon: '⬢' },
-  { match: 'MITRE', color: 'var(--c6)', icon: '◈' },
+  { match: 'PDPL', color: 'var(--c3)', icon: '⚖' },
+  { match: 'OWASP', color: 'var(--c6)', icon: '⬢' },
+  { match: 'MITRE', color: 'var(--c5)', icon: '◈' },
   { match: 'Digital Dubai', color: 'var(--c4)', icon: '◎' },
   { match: 'National AI', color: 'var(--c7)', icon: '▣' },
 ]
