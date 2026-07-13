@@ -1,16 +1,4 @@
-/** Framework mapping section — colored framework pills + mapping cards. */
-
-const FRAMEWORK_STYLE = [
-  { match: 'PDPL', color: 'var(--c3)', icon: '⚖' },
-  { match: 'OWASP', color: 'var(--c6)', icon: '⬢' },
-  { match: 'MITRE', color: 'var(--c5)', icon: '◈' },
-  { match: 'Digital Dubai', color: 'var(--c4)', icon: '◎' },
-  { match: 'National AI', color: 'var(--c7)', icon: '▣' },
-]
-
-const styleFor = (name) =>
-  FRAMEWORK_STYLE.find((f) => name.toLowerCase().includes(f.match.toLowerCase())) ??
-  { color: 'var(--c1)', icon: '◇' }
+/** Framework mapping section — framework pills + mapping cards. */
 
 export default function FrameworkMap({ framework }) {
   const { mappings = [], summary, pdpl_violation } = framework
@@ -21,7 +9,7 @@ export default function FrameworkMap({ framework }) {
       <h2 className="section-title">Framework Mapping</h2>
 
       {mappings.length === 0 ? (
-        <div className="state-panel glass">
+        <div className="state-panel card">
           <div className="state-icon" aria-hidden="true">✓</div>
           <div className="state-title">No framework violations</div>
           <p className="state-body">
@@ -31,26 +19,11 @@ export default function FrameworkMap({ framework }) {
       ) : (
         <>
           <div className="framework-badges">
-            {uniqueFrameworks.map((name) => {
-              const s = styleFor(name)
-              return (
-                <span
-                  key={name}
-                  className="framework-pill"
-                  style={{
-                    color: s.color,
-                    borderColor: `color-mix(in srgb, ${s.color} 50%, transparent)`,
-                    background: 'var(--panel)',
-                  }}
-                >
-                  <span aria-hidden="true">{s.icon}</span> {name}
-                </span>
-              )
-            })}
+            {uniqueFrameworks.map((name) => (
+              <span key={name} className="framework-pill">{name}</span>
+            ))}
             {pdpl_violation && (
-              <span className="framework-pill" style={{ color: 'var(--c5)', borderColor: 'rgba(232,138,138,0.5)', background: 'rgba(232,138,138,0.07)' }}>
-                ⚠ PDPL violation identified
-              </span>
+              <span className="framework-pill warning">PDPL violation identified</span>
             )}
           </div>
 
@@ -59,10 +32,9 @@ export default function FrameworkMap({ framework }) {
           )}
 
           {mappings.map((m, i) => {
-            const s = styleFor(m.framework)
             return (
-              <div className="mapping-card glass fade-up" style={{ animationDelay: `${0.08 * i}s` }} key={i}>
-                <span className="mapping-ref" style={{ color: s.color }}>
+              <div className="mapping-card card fade-up" style={{ animationDelay: `${0.08 * i}s` }} key={i}>
+                <span className="mapping-ref">
                   {m.framework} · {m.reference}
                 </span>
                 <span className="mapping-violation">{m.violation}</span>

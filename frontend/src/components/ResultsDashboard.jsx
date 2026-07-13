@@ -32,7 +32,7 @@ function ConfidenceGauge({ confidence }) {
         <path
           d="M16 60 A44 44 0 0 1 104 60"
           fill="none"
-          stroke="rgba(255,255,255,0.07)"
+          stroke="var(--track)"
           strokeWidth="8"
           strokeLinecap="round"
         />
@@ -54,7 +54,7 @@ function ConfidenceGauge({ confidence }) {
           textAnchor="middle"
           fill="var(--text)"
           fontSize="17"
-          fontWeight="800"
+          fontWeight="600"
           fontFamily="Inter, -apple-system, sans-serif"
         >
           {Math.round(pct * 100)}%
@@ -241,9 +241,8 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
       {/* Pipeline flow — four nodes showing each agent's outcome severity */}
       <PipelineFlow agents={agents} />
 
-      {/* Decision badge with pulsing glow */}
+      {/* Decision verdict */}
       <div className={`decision-wrap decision-${decision}`}>
-        <div className="decision-glow" aria-hidden="true" />
         <div className="decision-badge" role="status">{decision}</div>
         {decision_rationale && <p className="decision-rationale">{decision_rationale}</p>}
       </div>
@@ -254,7 +253,7 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
       {/* 2×2 agent grid with staggered entrance */}
       <div className="agent-grid">
         <AgentCard
-          icon="🛡"
+          icon="1"
           name="Agent 1 — UAE PII Detector"
           model={modelPill(pii.model)}
           color="var(--c4)"
@@ -274,7 +273,7 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
         </AgentCard>
 
         <AgentCard
-          icon="⚔"
+          icon="2"
           name="Agent 2 — Input/Output Validator"
           model={modelPill(injection.model)}
           color="var(--c6)"
@@ -300,7 +299,7 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
         </AgentCard>
 
         <AgentCard
-          icon="🗺"
+          icon="3"
           name="Agent 3 — Framework Mapper"
           model={modelPill(framework.model)}
           color="var(--c1)"
@@ -310,7 +309,7 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
         />
 
         <AgentCard
-          icon="📋"
+          icon="4"
           name="Agent 4 — Report Generator"
           model={modelPill(report.model)}
           color="var(--c7)"
@@ -329,14 +328,13 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
           <h2 className="section-title">Digital Dubai AI Ethics</h2>
           <div className="dd-grid">
             {[
-              { key: 'accountability', label: 'Accountability', icon: '⊛' },
-              { key: 'transparency',   label: 'Transparency',   icon: '◈' },
-              { key: 'fairness',       label: 'Fairness',       icon: '⊜' },
-              { key: 'explainability', label: 'Explainability', icon: '◎' },
-            ].map(({ key, label, icon }) => (
-              <div key={key} className="dd-card glass fade-up">
+              { key: 'accountability', label: 'Accountability' },
+              { key: 'transparency',   label: 'Transparency' },
+              { key: 'fairness',       label: 'Fairness' },
+              { key: 'explainability', label: 'Explainability' },
+            ].map(({ key, label }) => (
+              <div key={key} className="dd-card card fade-up">
                 <div className="dd-card-head">
-                  <span className="dd-icon" aria-hidden="true">{icon}</span>
                   <span className="eyebrow">{label}</span>
                 </div>
                 <p className="dd-text">
@@ -351,7 +349,7 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
       {/* Compliance report */}
       <section>
         <h2 className="section-title">Compliance Report</h2>
-        <div className="report-panel glass-2">
+        <div className="report-panel card">
           <span className="eyebrow">Executive summary</span>
           <p style={{ marginTop: 8 }}>{report.executive_summary || 'No summary available.'}</p>
 

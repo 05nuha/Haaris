@@ -25,7 +25,7 @@ const Check = ({ ok }) =>
 
 export default function AgentCard({ icon, name, model, color, severity, findings, error, children }) {
   return (
-    <article className="agent-card glass gradient-border-hover">
+    <article className="agent-card card">
       <span className="accent-bar" style={{ background: color }} aria-hidden="true" />
       <div className="agent-head">
         <div className="agent-identity">

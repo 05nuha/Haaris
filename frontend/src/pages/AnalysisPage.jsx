@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Particles from '../components/Particles.jsx'
 import SkeletonLoader from '../components/SkeletonLoader.jsx'
 import ResultsDashboard from '../components/ResultsDashboard.jsx'
 import { analyzePair } from '../api.js'
@@ -99,12 +98,9 @@ export default function AnalysisPage({ loadedResult, clearLoaded }) {
 
   return (
     <main className="hero" ref={topRef}>
-      <Particles />
-
       <div className="input-grid">
-        <div className="input-panel input-panel-prompt glass gradient-border-hover">
+        <div className="input-panel input-panel-prompt card">
           <label className="input-label" htmlFor="llm-prompt">
-            <span className="dot" style={{ background: 'var(--c1)' }} aria-hidden="true" />
             LLM Prompt
           </label>
           <textarea
@@ -117,9 +113,8 @@ export default function AnalysisPage({ loadedResult, clearLoaded }) {
           <span className="char-counter">{prompt.length.toLocaleString()} / {MAX.toLocaleString()}</span>
         </div>
 
-        <div className="input-panel input-panel-response glass gradient-border-hover">
+        <div className="input-panel input-panel-response card">
           <label className="input-label" htmlFor="llm-response">
-            <span className="dot" style={{ background: 'var(--c2)' }} aria-hidden="true" />
             LLM Response
           </label>
           <textarea
@@ -144,7 +139,7 @@ export default function AnalysisPage({ loadedResult, clearLoaded }) {
 
       {error && (
         <div className="error-banner">
-          <div className="state-panel glass error" role="alert">
+          <div className="state-panel card error" role="alert">
             <div className="state-icon" aria-hidden="true">⚠</div>
             <div className="state-title">{error.title}</div>
             <p className="state-body">{error.body}</p>
@@ -153,9 +148,8 @@ export default function AnalysisPage({ loadedResult, clearLoaded }) {
       )}
 
       {!loading && !error && !result && (
-        <div className="state-panel glass" style={{ marginTop: 30 }}>
-          <div className="state-icon" aria-hidden="true">🛡</div>
-          <div className="state-title">Ready to guard</div>
+        <div className="state-panel card" style={{ marginTop: 30 }}>
+          <div className="state-title">Ready to analyze</div>
           <p className="state-body">
             Paste a prompt/response pair above. Four agents will scan it —
             Emirates IDs and UAE-regulated PII are caught locally by deterministic

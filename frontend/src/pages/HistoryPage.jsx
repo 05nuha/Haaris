@@ -68,7 +68,7 @@ export default function HistoryPage({ onView }) {
 
   if (state.loading) {
     return (
-      <div className="loading-panel glass" role="status">
+      <div className="loading-panel card" role="status">
         <div className="loading-stage">
           <span className="spinner" aria-hidden="true" /> Loading audit trail…
         </div>
@@ -78,7 +78,7 @@ export default function HistoryPage({ onView }) {
 
   if (state.error) {
     return (
-      <div className="state-panel glass error" role="alert">
+      <div className="state-panel card error" role="alert">
         <div className="state-icon" aria-hidden="true">⚠</div>
         <div className="state-title">Audit trail unavailable</div>
         <p className="state-body">{state.error}</p>
@@ -88,8 +88,7 @@ export default function HistoryPage({ onView }) {
 
   if (state.items.length === 0) {
     return (
-      <div className="state-panel glass">
-        <div className="state-icon" aria-hidden="true">🗂</div>
+      <div className="state-panel card">
         <div className="state-title">No analyses yet</div>
         <p className="state-body">
           Every analysis is stored here with a timestamp and input hash for the PDPL
@@ -121,7 +120,7 @@ export default function HistoryPage({ onView }) {
 
       {viewError && <div className="agent-error" role="alert" style={{ marginBottom: 14 }}>{viewError}</div>}
 
-      <div className="history-table-wrap glass">
+      <div className="history-table-wrap card">
         <table className="history-table">
           <thead>
             <tr>

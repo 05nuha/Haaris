@@ -9,10 +9,10 @@ const SEV_COLOR = {
 }
 
 const STAGES = [
-  { icon: '🛡', label: 'PII Detector', agentColor: 'var(--c4)' },
-  { icon: '⚔',  label: 'Validator',    agentColor: 'var(--c6)' },
-  { icon: '🗺', label: 'Frameworks',   agentColor: 'var(--c1)' },
-  { icon: '📋', label: 'Report',       agentColor: 'var(--c7)' },
+  { icon: '1', label: 'PII Detector' },
+  { icon: '2', label: 'Validator' },
+  { icon: '3', label: 'Frameworks' },
+  { icon: '4', label: 'Report' },
 ]
 
 export default function PipelineFlow({ agents }) {
@@ -31,10 +31,7 @@ export default function PipelineFlow({ agents }) {
         const sevColor = SEV_COLOR[severities[i]] || 'var(--c4)'
         return (
           <div key={i} className="pipeline-stage-wrap" role="listitem">
-            <div
-              className="pipeline-node"
-              style={{ '--node-color': sevColor, '--agent-color': stage.agentColor }}
-            >
+            <div className="pipeline-node" style={{ '--node-color': sevColor }}>
               <div className="pipeline-node-icon" aria-hidden="true">{stage.icon}</div>
               <div className="pipeline-node-label">{stage.label}</div>
               {severities[i] !== 'None' && (
