@@ -1,32 +1,34 @@
 /* ============================================================
    Haaris (حارس) — UAE LLM Compliance Guardrail
-   Design system: clean, human-centric minimalism.
-   Warm neutrals, one green accent, generous whitespace,
+   Design system: clean, human-centric minimalism on a deep
+   spruce-green theme. One green accent, generous whitespace,
    1px borders, Inter typography. Color is reserved for
    meaning (severity, decisions) — never decoration.
    ============================================================ */
 
 :root {
-  --bg: #fafaf9;
-  --panel: #ffffff;
-  --panel-2: #f5f5f4;
-  --stroke: #e7e5e4;
-  --stroke-strong: #d6d3d1;
-  --track: #e7e5e4;
-  --text: #1c1917;
-  --muted: #78716c;
+  /* Deep spruce-green theme — the brand green carried into the surfaces
+     themselves. Calm and matte: no gradients, no glow, one accent. */
+  --bg: #0c1712;
+  --panel: #122019;
+  --panel-2: #18291f;
+  --stroke: #23372c;
+  --stroke-strong: #32483b;
+  --track: #23372c;
+  --text: #e9efeb;
+  --muted: #92a89a;
 
   /* the one accent */
-  --accent: #047a4e;
-  --accent-strong: #03613e;
-  --accent-tint: #ecf6f1;
+  --accent: #2fbd80;
+  --accent-strong: #4ecf95;
+  --accent-tint: #163427;
 
   /* semantic severity colors (meaning, not decoration) */
-  --sev-critical: #b91c1c;
-  --sev-high: #c2410c;
-  --sev-medium: #a16207;
-  --sev-low: #15803d;
-  --sev-none: #78716c;
+  --sev-critical: #f47c7c;
+  --sev-high: #f0a06a;
+  --sev-medium: #e3c25e;
+  --sev-low: #5fce97;
+  --sev-none: #92a89a;
 
   /* legacy variable names kept for component compatibility,
      remapped onto the restrained palette */
@@ -35,14 +37,20 @@
   --c3: var(--sev-medium);
   --c4: var(--sev-low);
   --c5: var(--sev-critical);
-  --c6: #57534e;
-  --c7: #57534e;
+  --c6: var(--muted);
+  --c7: var(--muted);
   --c8: var(--sev-high);
+
+  /* translucent severity tints for chips/badges on the dark surface */
+  --tint-critical: rgba(244, 124, 124, 0.10);
+  --tint-high: rgba(240, 160, 106, 0.10);
+  --tint-medium: rgba(227, 194, 94, 0.10);
+  --tint-low: rgba(95, 206, 151, 0.10);
 
   --radius: 10px;
   --maxw: 1080px;
   --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 * {
@@ -295,7 +303,7 @@ code {
   border: none;
   border-radius: 8px;
   background: var(--accent);
-  color: #fff;
+  color: #07150e;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -308,14 +316,14 @@ code {
 
 .analyze-btn:disabled {
   background: var(--stroke-strong);
-  color: #fff;
+  color: var(--muted);
   cursor: not-allowed;
 }
 
 .kbd-hint {
   font-family: inherit;
   font-size: 0.72rem;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.18);
   border-radius: 4px;
   padding: 1px 6px;
 }
@@ -585,17 +593,17 @@ code {
 
 .decision-COMPLIANT .decision-badge {
   color: var(--sev-low);
-  background: #f0f7f1;
+  background: var(--tint-low);
 }
 
 .decision-REVIEW .decision-badge {
   color: var(--sev-medium);
-  background: #faf5e9;
+  background: var(--tint-medium);
 }
 
 .decision-NON-COMPLIANT .decision-badge {
   color: var(--sev-critical);
-  background: #fbeeee;
+  background: var(--tint-critical);
 }
 
 .decision-rationale {
@@ -710,10 +718,10 @@ code {
   white-space: nowrap;
 }
 
-.sev-Critical { color: var(--sev-critical); border-color: color-mix(in srgb, var(--sev-critical) 45%, var(--stroke)); background: #fbeeee; }
-.sev-High     { color: var(--sev-high); border-color: color-mix(in srgb, var(--sev-high) 45%, var(--stroke)); background: #fdf1ea; }
-.sev-Medium   { color: var(--sev-medium); border-color: color-mix(in srgb, var(--sev-medium) 45%, var(--stroke)); background: #faf5e9; }
-.sev-Low      { color: var(--sev-low); border-color: color-mix(in srgb, var(--sev-low) 45%, var(--stroke)); background: #f0f7f1; }
+.sev-Critical { color: var(--sev-critical); border-color: color-mix(in srgb, var(--sev-critical) 45%, var(--stroke)); background: var(--tint-critical); }
+.sev-High     { color: var(--sev-high); border-color: color-mix(in srgb, var(--sev-high) 45%, var(--stroke)); background: var(--tint-high); }
+.sev-Medium   { color: var(--sev-medium); border-color: color-mix(in srgb, var(--sev-medium) 45%, var(--stroke)); background: var(--tint-medium); }
+.sev-Low      { color: var(--sev-low); border-color: color-mix(in srgb, var(--sev-low) 45%, var(--stroke)); background: var(--tint-low); }
 .sev-None     { color: var(--muted); background: var(--panel-2); }
 
 .check {
@@ -772,8 +780,9 @@ code {
   left: 50%;
   transform: translateX(-50%);
   width: 230px;
-  background: var(--text);
-  color: #fff;
+  background: var(--panel-2);
+  border: 1px solid var(--stroke-strong);
+  color: var(--text);
   font-size: 0.72rem;
   line-height: 1.45;
   padding: 8px 10px;
@@ -785,7 +794,7 @@ code {
   margin-top: 10px;
   font-size: 0.82rem;
   color: var(--sev-critical);
-  background: #fbeeee;
+  background: var(--tint-critical);
   border: 1px solid color-mix(in srgb, var(--sev-critical) 30%, var(--stroke));
   border-radius: 8px;
   padding: 8px 12px;
@@ -873,7 +882,7 @@ code {
 .framework-pill.warning {
   color: var(--sev-critical);
   border-color: color-mix(in srgb, var(--sev-critical) 40%, var(--stroke));
-  background: #fbeeee;
+  background: var(--tint-critical);
 }
 
 .mapping-card {
@@ -963,7 +972,7 @@ code {
   border: none;
   border-radius: 8px;
   background: var(--accent);
-  color: #fff;
+  color: #07150e;
   font: inherit;
   font-size: 0.88rem;
   font-weight: 600;
@@ -1076,9 +1085,9 @@ code {
   white-space: nowrap;
 }
 
-.chip-COMPLIANT { color: var(--sev-low); background: #f0f7f1; }
-.chip-REVIEW { color: var(--sev-medium); background: #faf5e9; }
-.chip-NON-COMPLIANT { color: var(--sev-critical); background: #fbeeee; }
+.chip-COMPLIANT { color: var(--sev-low); background: var(--tint-low); }
+.chip-REVIEW { color: var(--sev-medium); background: var(--tint-medium); }
+.chip-NON-COMPLIANT { color: var(--sev-critical); background: var(--tint-critical); }
 
 .reviewbtn {
   appearance: none;

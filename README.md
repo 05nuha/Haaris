@@ -12,7 +12,7 @@ Final verdict: **COMPLIANT / REVIEW / NON-COMPLIANT**, with a MongoDB audit trai
 ## Stack
 
 - **Backend:** FastAPI (async), Groq API, Motor/MongoDB, ReportLab — `backend/`
-- **Frontend:** React 18 + Vite — `frontend/` (clean, light, minimal UI; one green accent; color reserved for severity)
+- **Frontend:** React 18 + Vite — `frontend/` (deep spruce-green theme, minimal and matte; one green accent; color reserved for severity)
 
 ## Run locally
 
