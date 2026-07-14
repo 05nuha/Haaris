@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react'
 // Sequential pipeline stages (Agent 1 runs first and redacts PII before
 // anything is sent to the cloud — the labels reflect the real order).
 const STEPS = [
-  { at: 0, pct: 25, icon: '🛡', label: 'Agent 1 — Scanning for UAE-regulated PII…' },
-  { at: 2, pct: 55, icon: '⚔', label: 'Agent 2 — Classifying prompt injection patterns…' },
-  { at: 4, pct: 80, icon: '🗺', label: 'Agent 3 — Mapping to PDPL, OWASP, MITRE ATLAS…' },
-  { at: 7, pct: 93, icon: '📋', label: 'Agent 4 — Drafting compliance report…' },
+  { at: 0, pct: 25, icon: '1', label: 'Agent 1 — Scanning for UAE-regulated PII…' },
+  { at: 2, pct: 55, icon: '2', label: 'Agent 2 — Classifying prompt injection patterns…' },
+  { at: 4, pct: 80, icon: '3', label: 'Agent 3 — Mapping to PDPL, OWASP, MITRE ATLAS…' },
+  { at: 7, pct: 93, icon: '4', label: 'Agent 4 — Drafting compliance report…' },
 ]
 
 const StepCheck = () => (
@@ -29,7 +29,7 @@ export default function SkeletonLoader() {
   const pct = STEPS[activeIdx].pct
 
   return (
-    <div className="loading-panel glass fade-up" role="status" aria-live="polite">
+    <div className="loading-panel card fade-up" role="status" aria-live="polite">
       <div className="progress-track">
         <div className="progress-fill" style={{ width: `${pct}%` }} />
       </div>
