@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
+import { ShieldIcon, ZapIcon, LayersIcon, FileIcon } from './Icons.jsx'
 
 // Sequential pipeline stages (Agent 1 runs first and redacts PII before
 // anything is sent to the cloud — the labels reflect the real order).
 const STEPS = [
-  { at: 0, pct: 25, icon: '🛡', label: 'Agent 1 — Scanning for UAE-regulated PII…' },
-  { at: 2, pct: 55, icon: '⚔', label: 'Agent 2 — Classifying prompt injection patterns…' },
-  { at: 4, pct: 80, icon: '🗺', label: 'Agent 3 — Mapping to PDPL, OWASP, MITRE ATLAS…' },
-  { at: 7, pct: 93, icon: '📋', label: 'Agent 4 — Drafting compliance report…' },
+  { at: 0, pct: 25, Icon: ShieldIcon, label: 'Agent 1 — Scanning for UAE-regulated PII…' },
+  { at: 2, pct: 55, Icon: ZapIcon,    label: 'Agent 2 — Classifying prompt injection patterns…' },
+  { at: 4, pct: 80, Icon: LayersIcon, label: 'Agent 3 — Mapping to PDPL, OWASP, MITRE ATLAS…' },
+  { at: 7, pct: 93, Icon: FileIcon,   label: 'Agent 4 — Drafting compliance report…' },
 ]
 
 const StepCheck = () => (
@@ -35,12 +36,12 @@ export default function SkeletonLoader() {
       </div>
 
       <ol className="pipeline-steps">
-        {STEPS.map((step, i) => {
+        {STEPS.map(({ Icon, label }, i) => {
           const state = i < activeIdx ? 'done' : i === activeIdx ? 'active' : 'pending'
           return (
             <li key={i} className={`pipeline-step step-${state}`}>
-              <span className="step-icon" aria-hidden="true">{step.icon}</span>
-              <span className="step-label">{step.label}</span>
+              <span className="step-icon" aria-hidden="true"><Icon size={16} /></span>
+              <span className="step-label">{label}</span>
               <span className="step-status">
                 {state === 'done' && <StepCheck />}
                 {state === 'active' && <span className="spinner" aria-hidden="true" />}

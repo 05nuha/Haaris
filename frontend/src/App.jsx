@@ -14,26 +14,15 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const nav = (target) => {
+    if (target === 'history') setLoadedResult(null)
+    setPage(target)
+  }
+
   return (
     <>
-      <div className="grain" aria-hidden="true" />
+      <Header page={page} onNav={nav} />
       <div className="container">
-        <Header />
-        <nav className="nav-tabs" aria-label="Pages">
-          <button
-            className={`nav-tab ${page === 'analyze' ? 'active' : ''}`}
-            onClick={() => { setPage('analyze') }}
-          >
-            Analyze
-          </button>
-          <button
-            className={`nav-tab ${page === 'history' ? 'active' : ''}`}
-            onClick={() => { setLoadedResult(null); setPage('history') }}
-          >
-            History
-          </button>
-        </nav>
-
         {page === 'analyze' ? (
           <AnalysisPage
             loadedResult={loadedResult}

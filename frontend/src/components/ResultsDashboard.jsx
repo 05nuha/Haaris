@@ -2,6 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import AgentCard from './AgentCard.jsx'
 import FrameworkMap from './FrameworkMap.jsx'
 import PipelineFlow from './PipelineFlow.jsx'
+import {
+  ShieldIcon, ZapIcon, LayersIcon, FileIcon,
+  CheckCircleIcon, AlertTriangleIcon, XCircleIcon,
+  DownloadIcon, ArrowLeftIcon,
+  UsersIcon, EyeIcon, ScaleIcon, HelpCircleIcon,
+} from './Icons.jsx'
 import { downloadReport } from '../api.js'
 
 // ---------------------------------------------------------------------------
@@ -19,6 +25,7 @@ function ConfidenceGauge({ confidence }) {
   const HALF_CIRC = Math.PI * 44
   const offset = HALF_CIRC * (1 - pct)
   const color = pct < 0.4 ? 'var(--c4)' : pct < 0.75 ? 'var(--c3)' : 'var(--c5)'
+  const labelColor = pct < 0.4 ? 'var(--green-text)' : pct < 0.75 ? 'var(--amber-text)' : 'var(--red-text)'
   const label = pct < 0.4 ? 'Low' : pct < 0.75 ? 'Suspicious' : 'Confirmed'
 
   return (
@@ -32,7 +39,7 @@ function ConfidenceGauge({ confidence }) {
         <path
           d="M16 60 A44 44 0 0 1 104 60"
           fill="none"
-          stroke="rgba(255,255,255,0.07)"
+          stroke="var(--panel2)"
           strokeWidth="8"
           strokeLinecap="round"
         />
@@ -54,14 +61,14 @@ function ConfidenceGauge({ confidence }) {
           textAnchor="middle"
           fill="var(--text)"
           fontSize="17"
-          fontWeight="800"
+          fontWeight="700"
           fontFamily="Inter, -apple-system, sans-serif"
         >
           {Math.round(pct * 100)}%
         </text>
       </svg>
       <div className="conf-label">
-        <span style={{ color }}>{label}</span>{' '}· injection confidence
+        <span style={{ color: labelColor, fontWeight: 600 }}>{label}</span>{' '}· injection confidence
       </div>
     </div>
   )
@@ -134,11 +141,7 @@ function RiskSummary({ ranking }) {
         {ranking.map((entry, i) => {
           const level = levelOf(entry)
           return (
-            <span
-              key={i}
-              className={`risk-chip ${level ? `risk-${level}` : ''}`}
-              style={{ '--i': i }}
-            >
+            <span key={i} className={`risk-chip ${level ? `risk-${level}` : ''}`}>
               {entry}
             </span>
           )
@@ -178,12 +181,12 @@ function AnalysisIdStrip({ analysisId }) {
         aria-label={copied ? 'Copied' : 'Copy analysis ID'}
       >
         {copied ? (
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
             <path d="M3 8.5l3.5 3.5 6.5-8" fill="none" stroke="var(--c4)"
               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         ) : (
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
             <rect x="5" y="5" width="9" height="9" rx="1.5" fill="none"
               stroke="currentColor" strokeWidth="1.4" />
             <path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"
@@ -198,6 +201,12 @@ function AnalysisIdStrip({ analysisId }) {
 // ---------------------------------------------------------------------------
 // Main dashboard
 // ---------------------------------------------------------------------------
+
+const DECISION_ICON = {
+  'COMPLIANT': CheckCircleIcon,
+  'REVIEW': AlertTriangleIcon,
+  'NON-COMPLIANT': XCircleIcon,
+}
 
 export default function ResultsDashboard({ result, onNewAnalysis }) {
   const { analysis_id, decision, decision_rationale, agents } = result
@@ -226,6 +235,7 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
   }
 
   const ddAssessment = report.digital_dubai_assessment
+  const DecisionIcon = DECISION_ICON[decision] || AlertTriangleIcon
 
   return (
     <div className="results">
@@ -233,7 +243,7 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
       {onNewAnalysis && (
         <div className="results-toolbar">
           <button className="new-analysis-btn" onClick={onNewAnalysis}>
-            ← Analyze new pair
+            <ArrowLeftIcon size={14} /> Analyze new pair
           </button>
         </div>
       )}
@@ -241,20 +251,24 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
       {/* Pipeline flow — four nodes showing each agent's outcome severity */}
       <PipelineFlow agents={agents} />
 
-      {/* Decision badge with pulsing glow */}
-      <div className={`decision-wrap decision-${decision}`}>
-        <div className="decision-glow" aria-hidden="true" />
-        <div className="decision-badge" role="status">{decision}</div>
-        {decision_rationale && <p className="decision-rationale">{decision_rationale}</p>}
-      </div>
+      {/* Decision banner */}
+      <section className={`decision-wrap decision-${decision}`} role="status">
+        <div className="decision-icon" aria-hidden="true">
+          <DecisionIcon size={20} />
+        </div>
+        <div>
+          <div className="decision-badge">{decision}</div>
+          {decision_rationale && <p className="decision-rationale">{decision_rationale}</p>}
+        </div>
+      </section>
 
       {/* Risk summary — pre-ranked findings from Agent 4 */}
       <RiskSummary ranking={report.severity_ranking} />
 
-      {/* 2×2 agent grid with staggered entrance */}
+      {/* 2×2 agent grid */}
       <div className="agent-grid">
         <AgentCard
-          icon="🛡"
+          icon={<ShieldIcon size={17} />}
           name="Agent 1 — UAE PII Detector"
           model={modelPill(pii.model)}
           color="var(--c4)"
@@ -274,7 +288,7 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
         </AgentCard>
 
         <AgentCard
-          icon="⚔"
+          icon={<ZapIcon size={17} />}
           name="Agent 2 — Input/Output Validator"
           model={modelPill(injection.model)}
           color="var(--c6)"
@@ -300,7 +314,7 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
         </AgentCard>
 
         <AgentCard
-          icon="🗺"
+          icon={<LayersIcon size={17} />}
           name="Agent 3 — Framework Mapper"
           model={modelPill(framework.model)}
           color="var(--c1)"
@@ -310,7 +324,7 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
         />
 
         <AgentCard
-          icon="📋"
+          icon={<FileIcon size={17} />}
           name="Agent 4 — Report Generator"
           model={modelPill(report.model)}
           color="var(--c7)"
@@ -329,14 +343,14 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
           <h2 className="section-title">Digital Dubai AI Ethics</h2>
           <div className="dd-grid">
             {[
-              { key: 'accountability', label: 'Accountability', icon: '⊛' },
-              { key: 'transparency',   label: 'Transparency',   icon: '◈' },
-              { key: 'fairness',       label: 'Fairness',       icon: '⊜' },
-              { key: 'explainability', label: 'Explainability', icon: '◎' },
-            ].map(({ key, label, icon }) => (
-              <div key={key} className="dd-card glass fade-up">
+              { key: 'accountability', label: 'Accountability', Icon: UsersIcon },
+              { key: 'transparency',   label: 'Transparency',   Icon: EyeIcon },
+              { key: 'fairness',       label: 'Fairness',       Icon: ScaleIcon },
+              { key: 'explainability', label: 'Explainability', Icon: HelpCircleIcon },
+            ].map(({ key, label, Icon }) => (
+              <div key={key} className="dd-card glass">
                 <div className="dd-card-head">
-                  <span className="dd-icon" aria-hidden="true">{icon}</span>
+                  <span className="dd-icon" aria-hidden="true"><Icon size={15} /></span>
                   <span className="eyebrow">{label}</span>
                 </div>
                 <p className="dd-text">
@@ -370,7 +384,7 @@ export default function ResultsDashboard({ result, onNewAnalysis }) {
 
           {report.report_id && !report.error && (
             <button className="download-btn" onClick={handleDownload}>
-              <span aria-hidden="true">⬇</span> Download PDF report
+              <DownloadIcon size={15} /> Download PDF report
             </button>
           )}
           {downloadError && (

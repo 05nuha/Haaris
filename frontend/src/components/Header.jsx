@@ -1,46 +1,42 @@
-import { useEffect, useState } from 'react'
+import { ShieldIcon } from './Icons.jsx'
 
-const FULL = 'Haaris'
-
-/** Site header with a one-time typing animation on the wordmark. */
-export default function Header() {
-  const reduced =
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-  const [typed, setTyped] = useState(reduced ? FULL : '')
-  const done = typed.length === FULL.length
-
-  useEffect(() => {
-    if (done) return
-    const t = setTimeout(() => setTyped(FULL.slice(0, typed.length + 1)), 130)
-    return () => clearTimeout(t)
-  }, [typed, done])
-
+/** Top navigation bar — brand, page tabs, local-processing badge. */
+export default function Header({ page, onNav }) {
   return (
-    <header className="site-header">
-      <h1 className="site-title" aria-label="Haaris | حارس">
-        <span className="gradient-text">{typed}</span>
-        {done ? (
-          <span style={{ color: 'var(--muted)', fontWeight: 400 }}>
-            {' '}| <span className="gradient-text" dir="rtl">حارس</span>
+    <header className="navbar">
+      <div className="navbar-inner">
+        <div className="brand">
+          <span className="brand-mark" aria-hidden="true">
+            <ShieldIcon size={16} />
           </span>
-        ) : (
-          <span className="cursor" aria-hidden="true" />
-        )}
-      </h1>
-      <p
-        className="site-subtitle"
-        style={{ opacity: done ? 1 : 0, transition: 'opacity 0.6s ease' }}
-      >
-        UAE LLM Compliance Guardrail
-      </p>
-      <div
-        className="local-badge"
-        style={{ opacity: done ? 1 : 0, transition: 'opacity 0.6s ease 0.15s' }}
-      >
-        <span className="dot" aria-hidden="true" />
-        Local PII detection — Emirates IDs caught by on-device regex before any cloud call
+          Haaris
+          <span className="brand-ar" dir="rtl" aria-hidden="true">حارس</span>
+        </div>
+
+        <nav className="nav-tabs" aria-label="Pages">
+          <button
+            className={`nav-tab ${page === 'analyze' ? 'active' : ''}`}
+            onClick={() => onNav('analyze')}
+          >
+            Analyze
+          </button>
+          <button
+            className={`nav-tab ${page === 'history' ? 'active' : ''}`}
+            onClick={() => onNav('history')}
+          >
+            History
+          </button>
+        </nav>
+
+        <div className="navbar-right">
+          <span
+            className="local-badge"
+            title="Emirates IDs and UAE-regulated PII are detected and masked by on-device regex before any cloud call."
+          >
+            <span className="dot" aria-hidden="true" />
+            Local PII redaction
+          </span>
+        </div>
       </div>
     </header>
   )
