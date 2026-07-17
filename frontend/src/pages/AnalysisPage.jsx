@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Particles from '../components/Particles.jsx'
 import SkeletonLoader from '../components/SkeletonLoader.jsx'
 import ResultsDashboard from '../components/ResultsDashboard.jsx'
+import { ShieldIcon, AlertTriangleIcon } from '../components/Icons.jsx'
 import { analyzePair } from '../api.js'
 
 const MAX = 100000
@@ -98,11 +98,17 @@ export default function AnalysisPage({ loadedResult, clearLoaded }) {
     typeof navigator !== 'undefined' && navigator.maxTouchPoints === 0
 
   return (
-    <main className="hero" ref={topRef}>
-      <Particles />
+    <main ref={topRef}>
+      <div className="page-head">
+        <h1>Compliance Analysis</h1>
+        <p className="page-sub">
+          Screen an LLM prompt/response pair against UAE PDPL, OWASP LLM Top 10,
+          MITRE ATLAS, and Digital Dubai AI Ethics guidelines.
+        </p>
+      </div>
 
       <div className="input-grid">
-        <div className="input-panel input-panel-prompt glass gradient-border-hover">
+        <div className="input-panel glass gradient-border-hover">
           <label className="input-label" htmlFor="llm-prompt">
             <span className="dot" style={{ background: 'var(--c1)' }} aria-hidden="true" />
             LLM Prompt
@@ -117,9 +123,9 @@ export default function AnalysisPage({ loadedResult, clearLoaded }) {
           <span className="char-counter">{prompt.length.toLocaleString()} / {MAX.toLocaleString()}</span>
         </div>
 
-        <div className="input-panel input-panel-response glass gradient-border-hover">
+        <div className="input-panel glass gradient-border-hover">
           <label className="input-label" htmlFor="llm-response">
-            <span className="dot" style={{ background: 'var(--c2)' }} aria-hidden="true" />
+            <span className="dot" style={{ background: 'var(--c7)' }} aria-hidden="true" />
             LLM Response
           </label>
           <textarea
@@ -134,7 +140,7 @@ export default function AnalysisPage({ loadedResult, clearLoaded }) {
       </div>
 
       <button className="analyze-btn" onClick={analyze} disabled={!canAnalyze}>
-        <span>{loading ? 'Analyzing…' : 'Analyze'}</span>
+        <span>{loading ? 'Analyzing…' : 'Run analysis'}</span>
         {showKbdHint && canAnalyze && (
           <kbd className="kbd-hint" aria-hidden="true">⌘↵</kbd>
         )}
@@ -145,7 +151,7 @@ export default function AnalysisPage({ loadedResult, clearLoaded }) {
       {error && (
         <div className="error-banner">
           <div className="state-panel glass error" role="alert">
-            <div className="state-icon" aria-hidden="true">⚠</div>
+            <div className="state-icon" aria-hidden="true"><AlertTriangleIcon size={22} /></div>
             <div className="state-title">{error.title}</div>
             <p className="state-body">{error.body}</p>
           </div>
@@ -153,11 +159,11 @@ export default function AnalysisPage({ loadedResult, clearLoaded }) {
       )}
 
       {!loading && !error && !result && (
-        <div className="state-panel glass" style={{ marginTop: 30 }}>
-          <div className="state-icon" aria-hidden="true">🛡</div>
-          <div className="state-title">Ready to guard</div>
+        <div className="state-panel glass" style={{ marginTop: 24 }}>
+          <div className="state-icon" aria-hidden="true"><ShieldIcon size={22} /></div>
+          <div className="state-title">Ready to analyze</div>
           <p className="state-body">
-            Paste a prompt/response pair above. Four agents will scan it —
+            Paste a prompt/response pair above. Four agents scan it in sequence —
             Emirates IDs and UAE-regulated PII are caught locally by deterministic
             regex, then findings are classified and mapped to PDPL, OWASP LLM Top 10,
             MITRE ATLAS, and Digital Dubai guidelines.

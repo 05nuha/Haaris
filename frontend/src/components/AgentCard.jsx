@@ -1,8 +1,9 @@
-/** One agent result card — accent bar, model pill, animated checkmark,
+/** One agent result card — accent bar, model pill, status mark,
     findings list (with optional masked-value tooltips), and severity badge.
 
-    `findings` items may be plain strings, or objects:
-      { text: '…', masked: true }  → renders an ⓘ tooltip explaining masking. */
+    `icon` is a rendered element (SVG). `findings` items may be plain
+    strings, or objects: { text: '…', masked: true } → renders an ⓘ
+    tooltip explaining masking. */
 
 const MASK_NOTE =
   'Value masked — raw identifiers are never stored or sent to cloud APIs.'
@@ -13,13 +14,13 @@ const SeverityBadge = ({ level }) =>
 const Check = ({ ok }) =>
   ok ? (
     <svg className="check" viewBox="0 0 26 26" aria-label="Complete">
-      <circle cx="13" cy="13" r="12" stroke="var(--c4)" />
-      <path d="M7.5 13.5l3.5 3.5 7-8" stroke="var(--c4)" />
+      <circle cx="13" cy="13" r="11" stroke="var(--c4)" />
+      <path d="M8 13.5l3.5 3.5 6.5-8" stroke="var(--c4)" />
     </svg>
   ) : (
     <svg className="check" viewBox="0 0 26 26" aria-label="Error">
-      <circle cx="13" cy="13" r="12" stroke="var(--c5)" />
-      <path d="M9 9l8 8M17 9l-8 8" stroke="var(--c5)" />
+      <circle cx="13" cy="13" r="11" stroke="var(--c5)" />
+      <path d="M9.5 9.5l7 7M16.5 9.5l-7 7" stroke="var(--c5)" />
     </svg>
   )
 
@@ -47,7 +48,7 @@ export default function AgentCard({ icon, name, model, color, severity, findings
             const text = typeof f === 'string' ? f : f.text
             const masked = typeof f === 'object' && f.masked
             return (
-              <li key={i} style={{ '--i': i }}>
+              <li key={i}>
                 <span>
                   {text}
                   {masked && (

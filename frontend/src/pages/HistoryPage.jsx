@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react'
 import { fetchHistory, fetchAnalysis } from '../api.js'
+import { ArchiveIcon, AlertTriangleIcon } from '../components/Icons.jsx'
 
 const FILTERS = ['ALL', 'COMPLIANT', 'REVIEW', 'NON-COMPLIANT']
 
@@ -79,7 +80,7 @@ export default function HistoryPage({ onView }) {
   if (state.error) {
     return (
       <div className="state-panel glass error" role="alert">
-        <div className="state-icon" aria-hidden="true">⚠</div>
+        <div className="state-icon" aria-hidden="true"><AlertTriangleIcon size={22} /></div>
         <div className="state-title">Audit trail unavailable</div>
         <p className="state-body">{state.error}</p>
       </div>
@@ -89,7 +90,7 @@ export default function HistoryPage({ onView }) {
   if (state.items.length === 0) {
     return (
       <div className="state-panel glass">
-        <div className="state-icon" aria-hidden="true">🗂</div>
+        <div className="state-icon" aria-hidden="true"><ArchiveIcon size={22} /></div>
         <div className="state-title">No analyses yet</div>
         <p className="state-body">
           Every analysis is stored here with a timestamp and input hash for the PDPL
@@ -104,7 +105,13 @@ export default function HistoryPage({ onView }) {
 
   return (
     <section className="fade-up">
-      <h2 className="section-title">Audit Trail — {state.total} analyses</h2>
+      <div className="page-head">
+        <h1>Audit Trail</h1>
+        <p className="page-sub">
+          {state.total} {state.total === 1 ? 'analysis' : 'analyses'} recorded with timestamps
+          and input hashes for the PDPL audit requirement.
+        </p>
+      </div>
 
       <div className="filter-chips" role="group" aria-label="Filter by decision">
         {FILTERS.map((f) => (
